@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Responder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script type="importmap">
+  {
+    "imports": {
+      "vue": "https://unpkg.com/vue@3/dist/vue.esm-browser.js"
+    }
+  }
+
+
+
+
+    </script>
+
+</head>
+<body>
+<div id="app">
+    <div v-for="ad in list" :key="ad.link" :class="{responded: ad.responded}">
+        <a :href="'https://huurstunt.nl'+ad.link">{{ad.title}}</a>
+        <div class="info-grid">
+
+            <b>Distance:</b>
+            <span>{{ad.distance}} km</span>
+
+            <b>Room Price:</b>
+            <span>€ {{Math.round(ad.roomPrice)}}</span>
+
+
+            <b :class="{'red': shouldBeRedPeopleCount(ad)}">People count:</b>
+            <span :class="{'red': shouldBeRedPeopleCount(ad)}">{{ad.peopleCount}}p</span>
+
+            <b class="red" v-if="shouldBeRedPeopleCount(ad)">Bedroom
+                count:</b>
+            <span class="red" v-if="shouldBeRedPeopleCount(ad)">{{ad.bedroomCount}}</span>
+
+            <b :class="{'red': shouldBeRedPeopleCount(ad)}">Real people count:</b>
+
+            <div>
+                <input
+                        :value="ad.peopleCount || ad.bedroomCount || 0" type="number"
+                        step="1"
+                        min="0"
+                        @input="onPeopleInput(ad, $event)"/>
+                <button @click="onPeopleCountSubmit(ad)">OK</button>
+            </div>
+
+            <b v-if="ad.concerningTexts && ad.concerningTexts.length">Concerning sentences:</b>
+            <div v-if="ad.concerningTexts && ad.concerningTexts.length" class="cts">
+                <div v-for="ct of ad.concerningTexts">
+                    <span class="blue">{{ct.concerningSentence.substring(0,ct.index)}}</span>
+                    <span class="red">{{ct.concerningSentence.substring(ct.index, ct.index + ct.concerningText.length)}}</span>
+                    <span class="blue">{{ct.concerningSentence.substring(ct.index + ct.concerningText.length)}}</span>
+                </div>
+                <div class="btns">
+                    <button @click="accept(ad)">Accept</button>
+                    <button @click="exclude(ad)">Exclude</button>
+                </div>
+            </div>
+
+            <b>Contact:</b>
+            <div v-if="ad.email">
+
+                <button @click="email(ad)">Send email</button>
+                <button @click="cancelResponse(ad)" v-if="ad.responded">X</button>
+                {{ad.email}}
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script type="module">
+    import {createApp} from 'vue'
+
+
+
+
+    function start(event) {
+        let {linkInfos, config, responses} = event.detail;
+
+        createApp({
+            data() {
+                return {
+                    list: []
+                }
+            },
+            created() {
+                this.refreshItems();
+            },
+            methods: {
+                refreshItems() {
+                    this.list = [];
+                    for (let link in linkInfos) {
+                        if (!linkInfos[link].suitable) continue;
+                        this.list.push({...linkInfos[link], link});
+                    }
+                },
+                shouldBeRedPeopleCount(ad) {
+                    return !ad.peopleCount || !ad.bedroomCount || ad.peopleCount !== ad.bedroomCount;
+                },
+                onPeopleInput(ad, e) {
+                    ad.peopleCount_ = +e.target.value
+                    linkInfos[ad.link] = ad;
+                },
+                onPeopleCountSubmit(ad) {
+                    if (ad.peopleCount_ !== undefined) {
+                        ad.peopleCount = ad.peopleCount_;
+                        ad.bedroomCount = ad.peopleCount_;
+                    }
+                    recalculateAd(ad);
+                    this.refreshItems();
+                    _saveInfos();
+                },
+                accept(ad) {
+                    ad.concerningTexts = [];
+                    recalculateAd(ad);
+                    _saveInfos();
+                },
+
+                exclude(ad) {
+                    excludeLink(ad.link);
+                    delete linkInfos[ad.link];
+                    _saveInfos();
+                    this.refreshItems();
+                },
+                cancelResponse(ad) {
+                    ad.responded = false;
+                    recalculateAd(ad);
+                    _saveInfos();
+                },
+
+                email(ad) {
+
+                    let subject = "Apartment Viewing Request";
+                    let response = getResponse(ad);
+                    window.open('mailto:' + encodeURIComponent(ad.email) + '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(response), '_blank');
+                    ad.responded = true;
+                    recalculateAd(ad);
+                    _saveInfos();
+                }
+            }
+        }).mount('#app')
+
+        function recalculateAd(ad) {
+            ad.roomPrice = ad.price / ad.peopleCount;
+
+            ad.suitable = ad.roomPrice <= config.MAX_ROOM_PRICE;
+            let {link, peopleCount_, ...strippedAd} = ad;
+            linkInfos[ad.link] = strippedAd;
+        }
+
+        function _saveInfos() {
+            let newLinkInfos = {};
+            for (const link in linkInfos) {
+                newLinkInfos[link] = {};
+                Object.assign(newLinkInfos[link], linkInfos[link]);
+                delete newLinkInfos[link].link;
+                delete newLinkInfos[link].peopleCount_;
+            }
+
+            console.log("Saving data")
+            saveData(newLinkInfos);
+            dispatchEvent(new CustomEvent('saveInfos', newLinkInfos))
+        }
+
+        function getResponse(ad) {
+            if(ad.peopleCount>responses.length){
+                alert("Message text not defined!");
+                throw new Error('Message text not defined');
+            }
+            return responses[ad.peopleCount-1]
+                .replaceAll("${ad.title}", ad.title);
+        }
+    }
+
+    document.addEventListener('startApp', start);
+</script>
+
+</body>
+</html>

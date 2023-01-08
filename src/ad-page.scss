@@ -1,0 +1,23 @@
+.huurstunt-bot {
+  #ad-info-cont {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    box-shadow: 2px 0 8px #0004;
+    border-bottom-right-radius: 8px;
+    padding: 32px;
+    background-color: #fff;
+    font-size: 20px;
+    font-family: Arial, sans-serif;
+    display: grid;
+    width: 300px;
+    grid-template-columns: auto auto;
+    justify-content: space-between;
+    gap: 16px;
+
+
+    font-weight: bold;
+
+  }
+}

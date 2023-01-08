@@ -1,0 +1,60 @@
+body {
+  margin: 0;
+  padding: 32px;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+  font-size: 20px;
+  background-color: #000;
+  color: #aaa;
+}
+
+* {
+  font-family: "Poppins", sans-serif;
+}
+
+a {
+  color: aquamarine;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+#app > * {
+  padding: 20px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  justify-content: space-between;
+}
+
+.red {
+  color: red;
+}
+
+.blue {
+  color: #0090a3;
+}
+
+.cts {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.btns {
+  display: flex;
+}
+
+button {
+  max-width: 150px;
+}
+
+.responded {
+  background-color: #032;
+}
+
+/*# sourceMappingURL=responder-page.css.map */
